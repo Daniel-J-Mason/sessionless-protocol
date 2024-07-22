@@ -26,7 +26,7 @@ import java.util.UUID;
 
 public class Sessionless {
     
-    public static String[] generateKeysAsHex() {
+    public static String[] generateKeys() {
         KeyPairGenerator generator;
         Security.addProvider(new BouncyCastleProvider());
         ECNamedCurveParameterSpec ecNamedCurveParameterSpec =
@@ -51,7 +51,7 @@ public class Sessionless {
         return new String[]{privateKeyHex, publicKeyHex};
     }
     
-    public static String[] signMessage(String privateKey, String message) {
+    public static String sign(String privateKey, String message) {
         ECNamedCurveParameterSpec ecNamedCurveParameterSpec =
                 ECNamedCurveTable.getParameterSpec("secp256k1");
         ECDomainParameters domain =
@@ -70,10 +70,10 @@ public class Sessionless {
         byte[] messageHash = keccakMessageHash(message);
         BigInteger[] signature = signer.generateSignature(messageHash);
         
-        return new String[]{signature[0].toString(16), signature[1].toString(16)};
+        return String.format("%s%s", bigIntegerHexToString(signature[0]), bigIntegerHexToString(signature[1]));
     }
     
-    public static boolean verify(String publicKey, String[] signature, String message) {
+    public static boolean verifySignature(String publicKey, String signature, String message) {
         BigInteger publicKeyFormatted = new BigInteger(publicKey, 16);
         ECNamedCurveParameterSpec ecNamedCurveParameterSpec =
                 ECNamedCurveTable.getParameterSpec("secp256k1");
@@ -92,13 +92,13 @@ public class Sessionless {
         MessageDigest digest = new Keccak.Digest256();
         byte[] messageHash = digest.digest(message.getBytes());
         
-        return signer.verifySignature(messageHash, new BigInteger(signature[0], 16), new BigInteger(signature[1], 16));
+        return signer.verifySignature(messageHash, new BigInteger(signature.substring(0, 64), 16), new BigInteger(signature.substring(64, 128), 16));
     }
     
-    public static boolean associate(String primaryPublicKey, String[] primarySignature, String primaryMessage,
-                                    String secondaryPublicKey, String[] secondarySignature, String secondaryMessage) {
-        return verify(primaryPublicKey, primarySignature, primaryMessage)
-                && verify(secondaryPublicKey, secondarySignature, secondaryMessage);
+    public static boolean associate(String primaryPublicKey, String primarySignature, String primaryMessage,
+                                    String secondaryPublicKey, String secondarySignature, String secondaryMessage) {
+        return verifySignature(primaryPublicKey, primarySignature, primaryMessage)
+                && verifySignature(secondaryPublicKey, secondarySignature, secondaryMessage);
     }
     
     public static UUID generateUuid() {
@@ -113,17 +113,16 @@ public class Sessionless {
     private static String extractPublicKeyHex(ECPublicKey ecPublicKey) {
         
         ECPoint ecPoint = ecPublicKey.getW();
-        BigInteger publicBytesRawX = ecPoint.getAffineX();
-        BigInteger pubicBytesRawY = ecPoint.getAffineY();
+        BigInteger rawX = ecPoint.getAffineX();
+        BigInteger rawY = ecPoint.getAffineY();
         
         //Add compression prefix based on sign
-        boolean yIsEven = pubicBytesRawY.mod(new BigInteger("2")).equals(BigInteger.ZERO);
-        publicBytesRawX = publicBytesRawX.abs();
+        boolean yIsEven = rawY.mod(new BigInteger("2")).equals(BigInteger.ZERO);
+        rawX = rawX.abs();
         String prefix = yIsEven ? "02" : "03";
         
         //Ensure stripped 0's are sign only
-        String publicKeyHex = publicBytesRawX.toString(16);
-        publicKeyHex = StringUtils.leftPad(publicKeyHex, 64, '0');
+        String publicKeyHex = bigIntegerHexToString(rawX);
         publicKeyHex = prefix + publicKeyHex;
         
         return publicKeyHex;
@@ -132,5 +131,11 @@ public class Sessionless {
     private static byte[] keccakMessageHash(String message) {
         MessageDigest digest = new Keccak.Digest256();
         return digest.digest(message.getBytes());
+    }
+    
+    private static String bigIntegerHexToString(BigInteger bigIntegerHex) {
+        String hex = bigIntegerHex.toString(16);
+        hex = StringUtils.leftPad(hex, 64, '0');
+        return hex;
     }
 }
