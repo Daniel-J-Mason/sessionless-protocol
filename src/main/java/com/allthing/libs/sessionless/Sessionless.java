@@ -1,4 +1,4 @@
-package app.planetnine;
+package com.allthing.libs.sessionless;
 
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.crypto.params.ECDomainParameters;
@@ -24,8 +24,17 @@ import java.security.interfaces.ECPublicKey;
 import java.security.spec.ECPoint;
 import java.util.UUID;
 
+/**
+ * Sessionless is an authentication protocol that uses the cryptography employed by
+ * Bitcoin and Ethereum to authenticate messages sent between a client and a server.
+ */
 public class Sessionless {
     
+    /**
+     * Generates a new set of keys.
+     *
+     * @return An array of Strings where the first element is the private key and the second element is the public key.
+     */
     public static String[] generateKeys() {
         KeyPairGenerator generator;
         Security.addProvider(new BouncyCastleProvider());
@@ -40,7 +49,6 @@ public class Sessionless {
             throw new RuntimeException(e);
         }
         
-        
         KeyPair keyPair = generator.generateKeyPair();
         ECPrivateKey ecPrivateKey = (ECPrivateKey) keyPair.getPrivate();
         ECPublicKey ecPublicKey = (ECPublicKey) keyPair.getPublic();
@@ -51,6 +59,11 @@ public class Sessionless {
         return new String[]{privateKeyHex, publicKeyHex};
     }
     
+    /**
+     * Signs a message using provided private key.
+     *
+     * @return Hex encoded signature.
+     */
     public static String sign(String privateKey, String message) {
         ECNamedCurveParameterSpec ecNamedCurveParameterSpec =
                 ECNamedCurveTable.getParameterSpec("secp256k1");
@@ -73,6 +86,11 @@ public class Sessionless {
         return String.format("%s%s", bigIntegerHexToString(signature[0]), bigIntegerHexToString(signature[1]));
     }
     
+    /**
+     * Verifies a signature using provided public key and message.
+     *
+     * @return True if signature is valid, else false.
+     */
     public static boolean verifySignature(String publicKey, String signature, String message) {
         BigInteger publicKeyFormatted = new BigInteger(publicKey, 16);
         ECNamedCurveParameterSpec ecNamedCurveParameterSpec =
@@ -95,12 +113,22 @@ public class Sessionless {
         return signer.verifySignature(messageHash, new BigInteger(signature.substring(0, 64), 16), new BigInteger(signature.substring(64, 128), 16));
     }
     
+    /**
+     * Associates two pairs of public keys and signatures with two messages.
+     *
+     * @return True if both signatures are valid, else false.
+     */
     public static boolean associate(String primaryPublicKey, String primarySignature, String primaryMessage,
                                     String secondaryPublicKey, String secondarySignature, String secondaryMessage) {
         return verifySignature(primaryPublicKey, primarySignature, primaryMessage)
                 && verifySignature(secondaryPublicKey, secondarySignature, secondaryMessage);
     }
     
+    /**
+     * Generates a random UUID.
+     *
+     * @return Generated UUID.
+     */
     public static UUID generateUuid() {
         return UUID.randomUUID();
     }
@@ -132,7 +160,7 @@ public class Sessionless {
         MessageDigest digest = new Keccak.Digest256();
         return digest.digest(message.getBytes());
     }
-    
+
     private static String bigIntegerHexToString(BigInteger bigIntegerHex) {
         String hex = bigIntegerHex.toString(16);
         hex = StringUtils.leftPad(hex, 64, '0');

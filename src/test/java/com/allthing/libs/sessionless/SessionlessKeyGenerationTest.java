@@ -1,4 +1,4 @@
-package app.planetnine;
+package com.allthing.libs.sessionless;
 
 import org.junit.jupiter.api.Test;
 
