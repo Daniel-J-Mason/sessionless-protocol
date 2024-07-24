@@ -25,8 +25,8 @@ import java.security.spec.ECPoint;
 import java.util.UUID;
 
 /**
- * Sessionless is an authentication protocol that uses the cryptography employed by
- * Bitcoin and Ethereum to authenticate messages sent between a client and a server.
+ * Sessionless is a loose wrapper around the secp256k1 elliptic curve
+ * This library is designed to simplify the implementation of the cryptography behind sessionless to be used in client/server interaction
  */
 public class Sessionless {
     
@@ -114,7 +114,7 @@ public class Sessionless {
     }
     
     /**
-     * Associates two pairs of public keys and signatures with two messages.
+     * Associates two pairs of public keys using two signatures and messages
      *
      * @return True if both signatures are valid, else false.
      */

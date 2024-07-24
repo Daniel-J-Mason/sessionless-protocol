@@ -1,9 +1,15 @@
 plugins {
     id 'java'
     id 'maven-publish'
+    id 'signing'
 }
 
-group = 'com.all-thing.lib.sessionless'
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
+
+group = 'com.all-thing.libs.sessionless'
 version = '0.1.0'
 
 repositories {
@@ -14,14 +20,41 @@ publishing {
     publications {
         mavenJava(MavenPublication) {
             from components.java
+            pom {
+                name = 'Sessionless'
+                description = 'Sessionless is a loose wrapper around the secp256k1 elliptic curve\n' +
+                        'This library is designed to simplify the implementation of the cryptography behind sessionless to be used in client/server interaction\n'
+                url = 'https://github.com/Daniel-J-Mason/sessionless-protocol'
+                scm {
+                    url = "https://github.com/Daniel-J-Mason/sessionless-protocol"
+                    connection = "scm:git:https://github.com/Daniel-J-Mason/sessionless-protocol.git"
+                    developerConnection = "scm:git:https://github.com/Daniel-J-Mason/sessionless-protocol.git"
+                }
+                licenses {
+                    license {
+                        name = 'The Apache License, Version 2.0'
+                        url = 'https://www.apache.org/licenses/LICENSE-2.0.txt'
+                    }
+                }
+                developers {
+                    developer {
+                        id = 'daniel-j-mason'
+                        name = 'Daniel Mason'
+                    }
+                }
+            }
         }
     }
+}
+
+signing {
+    sign publishing.publications.mavenJava
 }
 
 dependencies {
     implementation 'org.bouncycastle:bcprov-jdk18on:1.77'
     implementation 'commons-codec:commons-codec:1.15'
-    implementation 'org.apache.commons:commons-lang3:3.0'
+    implementation 'org.apache.commons:commons-lang3:3.15.0'
     testImplementation platform('org.junit:junit-bom:5.9.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'
 }
